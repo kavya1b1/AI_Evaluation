@@ -58,6 +58,30 @@ FastAPI Backend (proposal_routes.py)
    ├── GenAI Narrative Generation
    └── PDF Report Generation
 ```
+---
+
+## 🎥 Demo Preview
+
+### 🧠 AI Evaluation Dashboard
+![Dashboard](asset/dashboard.png)
+
+---
+
+### 📈 Confidence & Uncertainty Visualization
+![Confidence](asset/confidence.png)
+
+---
+
+### 📊 Explainable AI – Feature Importance
+![XAI](asset/xai.png)
+
+---
+
+### 📄 Generated PDF Evaluation Report
+![Report](asset/report.pdf.png)
+
+---
+
 ⚙️ Technology Stack
 --------------------------------------------------------------------------------------------------------------
 🔹 Backend
