@@ -1,10 +1,15 @@
-🤖 AI Proposal Evaluation System
 
-An end-to-end AI-powered decision support system that automatically evaluates R&D / research proposals using Machine Learning, Explainable AI (XAI), Uncertainty Estimation, and Generative AI, and generates a professional evaluation report.
+🤖 AI Proposal Evaluation System
+--------------------------------------------------------------------------------------------------------------
+
+An end-to-end AI-powered decision support system for automated R&D proposal evaluation
+
+This system evaluates research and innovation proposals using Machine Learning, Explainable AI (XAI), Uncertainty Estimation, and Generative AI, producing transparent scores, confidence estimates, and professional PDF reports.
 
 🚩 Problem Statement
+--------------------------------------------------------------------------------------------------------------
 
-Manual evaluation of research and R&D proposals is often:
+Manual evaluation of R&D and research proposals is often:
 
 ⏳ Time-consuming
 
@@ -14,134 +19,58 @@ Manual evaluation of research and R&D proposals is often:
 
 📄 Poorly documented
 
-As a result, funding agencies, academic institutions, and innovation boards struggle to scale proposal evaluation while maintaining fairness and explainability.
+As proposal volumes grow, funding agencies and institutions need a scalable, objective, and explainable evaluation system.
 
 💡 Our Solution
+--------------------------------------------------------------------------------------------------------------
 
-We designed and built an AI Proposal Evaluation System that:
+We built an AI Proposal Evaluation System that:
 
-📄 Analyzes proposal PDFs automatically
+📄 Automatically parses proposal PDFs
 
-📊 Scores novelty, feasibility, and financial alignment
+🧠 Scores novelty, feasibility, and financial alignment
 
-📈 Estimates prediction confidence and risk
+📊 Uses ML ensembles with uncertainty estimation
 
-🧠 Explains decisions using Explainable AI (XAI & SHAP)
+🔍 Explains decisions using XAI & SHAP
 
-🤖 Generates human-readable AI evaluation narratives
+🤖 Generates human-readable AI narratives
 
-📑 Produces professional, downloadable PDF reports
+📑 Produces downloadable professional PDF reports
 
-🧠 System Architecture
+🏗️ System Architecture
+--------------------------------------------------------------------------------------------------------------
+```
 User (Browser)
-     │
-     ▼
+   │
+   ▼
 Streamlit Frontend (dashboard.py)
-     │
-     ▼
+   │
+   ▼
 FastAPI Backend (proposal_routes.py)
-     │
-     ├── PDF Parsing & Text Extraction
-     ├── Novelty Analysis
-     ├── Budget & Financial Feasibility Check
-     ├── ML Ensemble Evaluation
-     ├── Uncertainty & Confidence Estimation
-     ├── Explainable AI (Feature Importance + SHAP)
-     ├── Generative AI Narrative
-     ├── PDF Report Generation
-     │
-     ▼
-SQLite Database (Evaluation History)
-
-✨ Key Features
-📄 Proposal Upload & Parsing
-
-Accepts PDF proposals
-
-Extracts and processes text automatically
-
-📊 ML-Based Evaluation
-
-Ensemble-based scoring model
-
-Produces a final score (0–100)
-
-💰 Budget Analysis (Why Budget Matters)
-
-Budget is not optional input.
-
-It is used to:
-
-Check feasibility against expected funding norms
-
-Penalize unrealistic or risky budgets
-
-Balance innovation with financial practicality
-
-📌 A strong idea with an unrealistic budget increases project risk — the model captures this trade-off.
-
-📈 Confidence & Uncertainty Estimation
-
-Outputs confidence bands (lower, mean, upper)
-
-Indicates reliability of predictions
-
-Helps decision-makers understand risk
-
-🧠 Explainable AI (XAI)
-
-Feature importance visualization
-
-SHAP-based local explanations
-
-Answers: “Why did the model give this score?”
-
-🤖 Generative AI Narrative
-
-Automatically generates a human-readable evaluation
-
-Summarizes strengths, weaknesses, and recommendations
-
-Makes reports reviewer-ready
-
-📄 Automated PDF Report
-
-Each evaluation produces a professional PDF containing:
-
-Evaluation scores
-
-Funding recommendation
-
-Explainable AI insights
-
-Confidence & risk analysis
-
-AI-generated narrative
-
-🕒 Evaluation History
-
-Stores past evaluations
-
-Displays a timeline with scores and decisions
-
-🛠️ Tech Stack
-Frontend
-
-Streamlit
-
-Plotly
-
-Custom CSS (glassmorphism UI)
-
-Backend
+   │
+   ├── PDF Parsing & Text Extraction
+   ├── Novelty Analysis
+   ├── Budget & Financial Check
+   ├── ML Ensemble Evaluation
+   ├── Uncertainty & Confidence Estimation
+   ├── Explainable AI (Feature Importance + SHAP)
+   ├── GenAI Narrative Generation
+   └── PDF Report Generation
+```
+⚙️ Technology Stack
+--------------------------------------------------------------------------------------------------------------
+🔹 Backend
+--------------------------------------------------------------------------------------------------------------
 
 FastAPI
 
-SQLAlchemy
+SQLAlchemy + SQLite
 
-SQLite
+ReportLab (PDF generation)
 
-Machine Learning
+🔹 Machine Learning
+--------------------------------------------------------------------------------------------------------------
 
 Scikit-learn
 
@@ -149,23 +78,61 @@ Ensemble scoring logic
 
 Sampling-based uncertainty estimation
 
-Explainable AI
+🔹 Explainable AI
+--------------------------------------------------------------------------------------------------------------
 
-Feature Importance
+Feature importance
 
-SHAP
+SHAP (local explanations)
 
-Generative AI
+🔹 Generative AI
+--------------------------------------------------------------------------------------------------------------
 
 LLM-based evaluation narrative generation
 
-Reporting
+🔹 Frontend
+--------------------------------------------------------------------------------------------------------------
 
-ReportLab (PDF generation)
+Streamlit
 
-📂 Project Structure
-AI_Proposal_Evaluator/
-│
+Plotly (interactive visualizations)
+
+📥 Inputs
+--------------------------------------------------------------------------------------------------------------
+Input	Purpose
+Proposal PDF	Main document for evaluation
+Budget (₹)	Used to assess financial feasibility
+❓ Why Budget Matters
+
+Budget influences:
+
+Financial feasibility score
+
+Overall ML score weighting
+
+Risk & confidence estimation
+
+If budget is missing, the model still works — but financial realism cannot be evaluated, reducing decision quality.
+
+📤 Outputs
+--------------------------------------------------------------------------------------------------------------
+✅ Final AI score (0–100)
+
+📊 Confidence interval & uncertainty band
+
+🧠 Explainable feature contributions
+
+🤖 AI-generated evaluation narrative
+
+📄 Downloadable PDF report
+
+🕒 Evaluation history timeline
+
+📂## 📁 Project Structure
+---
+
+```text
+AI_Evaluation/
 ├── backend/
 │   ├── api/
 │   │   └── proposal_routes.py
@@ -181,7 +148,6 @@ AI_Proposal_Evaluator/
 │   │   └── report_generator.py
 │   ├── database.py
 │   ├── models.py
-│   ├── schemas.py
 │   └── main.py
 │
 ├── frontend/
@@ -190,30 +156,82 @@ AI_Proposal_Evaluator/
 ├── ml/
 │   ├── train_model.py
 │   ├── embedding_model.py
-│   └── vector_store.py
+│   ├── vector_store.py
+│   └── evaluator_model.pkl
 │
 ├── data/
 │   └── past_projects.csv
+│
+├── reports/        # Generated PDFs (ignored in Git)
+├── uploads/        # Uploaded proposal PDFs (ignored in Git)
 │
 ├── requirements.txt
 ├── .gitignore
 └── README.md
 
+```
 🚀 How to Run Locally
-1️⃣ Clone the Repository
-git clone https://github.com/your-username/AI_Proposal_Evaluator.git
-cd AI_Proposal_Evaluator
-
+--------------------------------------------------------------------------------------------------------------
+```
+1️⃣ Clone Repository
+git clone https://github.com/your-username/AI_Evaluation.git
+cd AI_Evaluation
+```
+```
 2️⃣ Create Virtual Environment
 python -m venv venv
 source venv/bin/activate   # macOS/Linux
 venv\Scripts\activate      # Windows
-
+```
+```
 3️⃣ Install Dependencies
 pip install -r requirements.txt
-
+```
+```
 4️⃣ Start Backend
 uvicorn backend.main:app --reload
-
+```
+```
 5️⃣ Start Frontend
 streamlit run frontend/dashboard.py
+```
+📄 Reports & Storage
+--------------------------------------------------------------------------------------------------------------
+Uploaded PDFs → uploads/
+
+Generated reports → reports/
+
+Evaluation metadata → SQLite database
+
+These folders are excluded from GitHub using .gitignore.
+
+🔒 What to Ignore in GitHub
+--------------------------------------------------------------------------------------------------------------
+Add this to .gitignore:
+```
+__pycache__/
+*.pyc
+venv/
+uploads/
+reports/
+proposals.db
+*.pkl
+.env
+```
+🧠 Key Highlights
+--------------------------------------------------------------------------------------------------------------
+End-to-end AI pipeline
+
+Explainable & auditable decisions
+
+Confidence-aware ML predictions
+
+Professional reporting
+
+Clean, modular architecture
+
+👩‍💻 Author
+--------------------------------------------------------------------------------------------------------------
+
+Kavya Gupta
+B.Tech | AI & ML | Full-Stack Development
