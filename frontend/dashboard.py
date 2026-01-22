@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 import time
 import plotly.express as px
+import plotly.graph_objects as go
 
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(
@@ -13,13 +14,11 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    /* Background */
     .stApp {
         background: radial-gradient(circle at top, #020617, #000000);
         color: #E5E7EB;
     }
 
-    /* Fade-in animation */
     @keyframes fadeIn {
         from { opacity: 0; transform: translateY(12px); }
         to { opacity: 1; transform: translateY(0); }
@@ -29,30 +28,27 @@ st.markdown(
         animation: fadeIn 0.8s ease-out;
     }
 
-    /* Glass card */
     .glass {
-        background: rgba(15, 23, 42, 0.7);
+        background: rgba(15, 23, 42, 0.75);
         backdrop-filter: blur(14px);
-        border-radius: 16px;
-        padding: 22px;
+        border-radius: 18px;
+        padding: 26px;
         border: 1px solid rgba(255,255,255,0.08);
-        box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        box-shadow: 0 25px 50px rgba(0,0,0,0.5);
     }
 
-    /* Gradient title */
     .gradient-text {
         background: linear-gradient(90deg, #38BDF8, #A78BFA);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        font-weight: 700;
+        font-weight: 800;
     }
 
-    /* Button */
     div.stButton > button {
         background: linear-gradient(90deg, #2563EB, #7C3AED);
         color: white;
-        border-radius: 12px;
-        padding: 12px 20px;
+        border-radius: 14px;
+        padding: 14px 22px;
         border: none;
         font-weight: 600;
         transition: all 0.3s ease;
@@ -60,15 +56,14 @@ st.markdown(
 
     div.stButton > button:hover {
         transform: translateY(-2px) scale(1.02);
-        box-shadow: 0 10px 30px rgba(124,58,237,0.6);
+        box-shadow: 0 14px 36px rgba(124,58,237,0.6);
     }
 
-    /* Section divider */
     hr {
         border: none;
         height: 1px;
         background: linear-gradient(90deg, transparent, #1E293B, transparent);
-        margin: 32px 0;
+        margin: 36px 0;
     }
     </style>
     """,
@@ -81,15 +76,13 @@ st.markdown(
     <div class="glass fade-in">
         <h1 class="gradient-text">🤖 AI Proposal Evaluation System</h1>
         <p style="color:#9CA3AF;font-size:16px;">
-            An intelligent decision-support platform powered by
-            <b>Machine Learning</b>, <b>Explainable AI</b>, and <b>Generative AI</b>.
+            Decision intelligence powered by <b>ML Ensembles</b>,
+            <b>Explainable AI</b>, and <b>Generative AI</b>.
         </p>
     </div>
     """,
     unsafe_allow_html=True
 )
-
-st.write("")
 
 # ---------------- INPUT ----------------
 st.markdown("<div class='glass fade-in'>", unsafe_allow_html=True)
@@ -106,19 +99,17 @@ if "result" not in st.session_state:
 
 # ---------------- EVALUATE ----------------
 if st.button("🚀 Run AI Evaluation", disabled=(file is None)):
-    with st.status("🧠 AI Cognitive Pipeline", expanded=True) as status:
+    with st.status("🧠 AI Cognitive Pipeline", expanded=True):
         steps = [
             "Parsing proposal structure",
-            "Generating semantic embeddings",
-            "Running ML evaluation model",
+            "Embedding semantic content",
+            "Running ML ensemble models",
             "Estimating uncertainty & confidence",
             "Generating LLM evaluation narrative",
         ]
         for step in steps:
             st.write(f"• {step}")
             time.sleep(0.6)
-
-        status.update(label="✅ AI Evaluation Complete", state="complete")
 
     response = requests.post(
         "http://localhost:8000/submit/",
@@ -144,10 +135,57 @@ if st.session_state.result:
     c2.metric("Novelty", f"{data['novelty']:.1f}")
     c3.metric("Finance", f"{data['finance']:.1f}")
 
-    st.progress(min(data["final_score"] / 100, 1.0))
     st.success(f"📝 Decision: **{data['decision']}**")
-
     st.markdown("</div>", unsafe_allow_html=True)
+
+    # ---------------- CONFIDENCE BAND ----------------
+    if "confidence_band" in data:
+        cb = data["confidence_band"]
+
+        st.markdown("<hr>", unsafe_allow_html=True)
+        st.markdown("<div class='glass fade-in'>", unsafe_allow_html=True)
+        st.subheader("📈 ML Confidence & Uncertainty")
+
+        fig = go.Figure()
+
+        fig.add_trace(go.Scatter(
+            x=[cb["lower"], cb["upper"]],
+            y=[1, 1],
+            mode="lines",
+            line=dict(width=14, color="rgba(99,102,241,0.35)"),
+            name="Confidence Interval"
+        ))
+
+        fig.add_trace(go.Scatter(
+            x=[cb["mean"]],
+            y=[1],
+            mode="markers",
+            marker=dict(size=18, color="#38BDF8"),
+            name="Predicted Score"
+        ))
+
+        fig.update_layout(
+            xaxis=dict(range=[0, 100], title="Score"),
+            yaxis=dict(visible=False),
+            height=220,
+            showlegend=False,
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)"
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+        st.metric(
+            "Model Confidence",
+            f"{cb['confidence']*100:.1f}%",
+            help="Probability that the true score lies within the confidence band"
+        )
+
+        st.caption(
+            "Shaded region represents ML uncertainty. Narrower bands indicate higher model confidence."
+        )
+
+        st.markdown("</div>", unsafe_allow_html=True)
 
     # ---------------- XAI ----------------
     if "feature_importance" in data:
@@ -171,7 +209,7 @@ if st.session_state.result:
         )
 
         st.plotly_chart(fig, use_container_width=True)
-        st.caption("ML model contribution of each feature.")
+        st.caption("Relative contribution of each feature in the ML model.")
 
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -191,9 +229,9 @@ if st.session_state.result:
     st.markdown(
         f"""
         <a href="{data['report_url']}" target="_blank"
-        style="display:inline-block;padding:14px 22px;
+        style="display:inline-block;padding:16px 26px;
         background:linear-gradient(90deg,#2563EB,#7C3AED);
-        color:white;border-radius:12px;font-weight:600;text-decoration:none;">
+        color:white;border-radius:14px;font-weight:700;text-decoration:none;">
         ⬇️ Download AI Evaluation PDF
         </a>
         """,
