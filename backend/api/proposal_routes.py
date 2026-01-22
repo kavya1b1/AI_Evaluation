@@ -69,15 +69,18 @@ async def submit_proposal(
 
     # ------------------ Generate PDF Report ------------------
     report_path = generate_report(
-        filename=f"{file.filename}_evaluation.pdf",
-        scores={
-            "novelty": novelty,
-            "finance": finance,
-            "final_score": score
-        },
-        decision=decision,
-        explanation=explanation
-    )
+    filename=f"{file.filename}_evaluation.pdf",
+    scores={
+        "novelty": novelty,
+        "finance": finance,
+        "final_score": score
+    },
+    decision=decision,
+    explanation=explanation,
+    ai_narrative=ai_report_text,   # ← from OpenRouter LLM
+    confidence=confidence
+)
+
 
     # ------------------ Store in Database ------------------
     record = ProposalEvaluation(

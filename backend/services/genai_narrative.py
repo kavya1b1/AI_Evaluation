@@ -1,22 +1,8 @@
 import os
-from openai import OpenAI
+import requests
 
-# Load OpenRouter API key
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-
-if not OPENROUTER_API_KEY:
-    raise RuntimeError(
-        "OPENROUTER_API_KEY environment variable is not set"
-    )
-
-# OpenRouter uses OpenAI-compatible client
-client = OpenAI(
-    api_key=OPENROUTER_API_KEY,
-    base_url="https://openrouter.ai/api/v1"
-)
-
-# Choose model (can be changed anytime)
-MODEL_NAME = "mistralai/mistral-7b-instruct"
+MODEL = "mistralai/mistral-7b-instruct"
 
 def generate_ai_narrative(
     proposal_text: str,
@@ -24,40 +10,44 @@ def generate_ai_narrative(
     finance: float,
     final_score: float,
     decision: str
-) -> str:
-    """
-    Generates a professional AI-written evaluation narrative
-    using an LLM accessed via OpenRouter.
-    """
-
+):
     prompt = f"""
-You are a senior R&D evaluator for a government research organization.
+You are an expert research evaluator for government-funded innovation projects.
 
-Write a professional evaluation narrative (200–300 words)
-for the following research proposal.
+Analyze the proposal and write a professional evaluation narrative.
 
 Proposal Summary:
-{proposal_text[:1500]}
+{proposal_text[:2000]}
 
-Evaluation Signals:
-- Novelty Score: {novelty}
-- Financial Compliance Score: {finance}
-- Final AI Score: {final_score}
-- Funding Decision: {decision}
+Scores:
+- Novelty: {novelty}/100
+- Financial Feasibility: {finance}/100
+- Final AI Score: {final_score}/100
 
-Your evaluation MUST cover:
-1. Technical strengths
-2. Innovation and novelty
-3. Feasibility and risks
-4. Final funding recommendation
+Decision: {decision}
 
-Use formal, objective, expert-level language.
+Write a concise but authoritative evaluation narrative suitable
+for a government funding committee.
 """
 
-    response = client.chat.completions.create(
-        model=MODEL_NAME,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.4
+    response = requests.post(
+        "https://openrouter.ai/api/v1/chat/completions",
+        headers={
+            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": "http://localhost",
+            "X-Title": "AI Proposal Evaluation System"
+        },
+        json={
+            "model": MODEL,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.4,
+            "max_tokens": 400
+        }
     )
 
-    return response.choices[0].message.content.strip()
+    if response.status_code != 200:
+        return "AI narrative generation failed."
+
+    return response.json()["choices"][0]["message"]["content"]
+
