@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 import shutil
 import os
 
+from backend.services.genai_narrative import generate_ai_narrative
 from backend.services.document_parser import extract_text_from_pdf
 from backend.services.novelty_engine import novelty_score
 from backend.services.financial_checker import check_finance
@@ -50,7 +51,19 @@ async def submit_proposal(
     else:
         decision = "Not Recommended"
 
+
+    ai_report_text = generate_ai_narrative(
+    proposal_text=text,
+    novelty=novelty,
+    finance=finance,
+    final_score=score,
+    decision=decision
+)
+
+
+
     # ------------------ Explainable AI ------------------
+
     explanation = generate_explanation(novelty, finance, technical)
     feature_importance = get_feature_importance()
 
@@ -89,5 +102,9 @@ async def submit_proposal(
         "decision": decision,
         "explanation": explanation,
         "feature_importance": feature_importance,
+        "ai_report_text": ai_report_text,
         "report_url": f"http://localhost:8000/reports/{os.path.basename(report_path)}"
     }
+
+
+
