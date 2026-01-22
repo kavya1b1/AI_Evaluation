@@ -1,24 +1,25 @@
 import numpy as np
 
-def estimate_confidence_band(predictions: list[float]):
+def estimate_confidence_band(predictions):
     """
-    Takes multiple model predictions and returns:
-    mean, std, confidence interval
+    predictions: list or numpy array of model scores
     """
     preds = np.array(predictions)
 
-    mean_score = preds.mean()
-    std_dev = preds.std()
+    mean = float(np.mean(preds))
+    std = float(np.std(preds))
 
-    lower = max(0, mean_score - 1.96 * std_dev)
-    upper = min(100, mean_score + 1.96 * std_dev)
+    # 95% confidence interval
+    lower = max(0.0, mean - 1.96 * std)
+    upper = min(100.0, mean + 1.96 * std)
 
-    confidence = max(0, 100 - std_dev * 10)
+    # Convert uncertainty to confidence (bounded)
+    confidence = max(0.0, min(100.0, 100 - (std * 4)))
 
     return {
-        "mean": round(mean_score, 2),
-        "std": round(std_dev, 2),
+        "mean": round(mean, 2),
         "lower": round(lower, 2),
         "upper": round(upper, 2),
+        "std": round(std, 2),
         "confidence": round(confidence, 2)
     }

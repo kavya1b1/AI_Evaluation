@@ -1,21 +1,55 @@
+"""
+Explainability Module
+---------------------
+Contains:
+1. Human-readable explanation generation
+2. ML feature importance extraction
+"""
+
+# ---------------- HUMAN EXPLANATION ----------------
 def generate_explanation(novelty, finance, technical):
     explanation = []
 
-    if novelty > 85:
-        explanation.append("Proposal shows high novelty compared to past and ongoing projects.")
-    elif novelty > 60:
-        explanation.append("Proposal has moderate novelty with some similarity to existing work.")
+    if novelty > 80:
+        explanation.append(
+            "The proposal demonstrates high novelty compared to past and ongoing projects."
+        )
     else:
-        explanation.append("Proposal shows significant overlap with existing projects.")
+        explanation.append(
+            "The proposal shows moderate novelty with some similarities to existing work."
+        )
 
-    if finance == 100:
-        explanation.append("Budget complies fully with S&T funding guidelines.")
+    if finance < 70:
+        explanation.append(
+        "The requested budget is relatively high compared to expected innovation impact, increasing financial risk."
+    )
     else:
-        explanation.append("Budget exceeds recommended limits and requires revision.")
+        explanation.append(
+        "The budget is well-aligned with the proposed innovation scope and expected outcomes."
+    )
 
-    if technical >= 80:
-        explanation.append("Technical approach is feasible and well-defined.")
+
+    if technical >= 75:
+        explanation.append(
+            "The technical approach is feasible and well-structured."
+        )
     else:
-        explanation.append("Technical feasibility needs further clarification.")
+        explanation.append(
+            "The technical approach may require further clarification or validation."
+        )
 
     return explanation
+
+
+# ---------------- ML FEATURE IMPORTANCE ----------------
+def get_feature_importance():
+    """
+    Returns normalized feature importance values.
+    These are static / mock values unless you attach them to a trained model.
+    """
+
+    return {
+        "Novelty": 0.45,
+        "Financial Compliance": 0.35,
+        "Technical Feasibility": 0.20
+    }

@@ -3,8 +3,9 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 from datetime import datetime
-import os
 import uuid
+import os
+
 
 def generate_report(
     filename,
@@ -12,14 +13,14 @@ def generate_report(
     decision,
     explanation,
     ai_narrative=None,
-    confidence=None
+    confidence_data=None   # ✅ FIX: accept confidence_data
 ):
     os.makedirs("reports", exist_ok=True)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     uid = uuid.uuid4().hex[:6]
-    report_filename = f"{timestamp}_{uid}_{filename}"
-    file_path = os.path.join("reports", report_filename)
+    final_filename = f"{timestamp}_{uid}_{filename}"
+    file_path = os.path.join("reports", final_filename)
 
     doc = SimpleDocTemplate(file_path, pagesize=A4)
     styles = getSampleStyleSheet()
@@ -66,26 +67,33 @@ def generate_report(
     story.append(Paragraph(decision, styles["Normal"]))
     story.append(Spacer(1, 16))
 
-    # ---------------- EXPLAINABLE AI ----------------
+    # ---------------- XAI ----------------
     story.append(Paragraph("<b>Explainable AI Insights</b>", styles["Heading2"]))
     story.append(Spacer(1, 6))
-
     for point in explanation:
         story.append(Paragraph(f"• {point}", styles["Normal"]))
-
     story.append(Spacer(1, 16))
 
-    # ---------------- CONFIDENCE ----------------
-    if confidence is not None:
+    # ---------------- CONFIDENCE & UNCERTAINTY ----------------
+    if confidence_data:
+        mean = confidence_data["mean"]
+        lower = confidence_data["lower"]
+        upper = confidence_data["upper"]
+        confidence = confidence_data["confidence"]
+
         story.append(Paragraph("<b>Model Confidence & Risk</b>", styles["Heading2"]))
         story.append(Spacer(1, 6))
         story.append(Paragraph(
-            f"The model reports a confidence level of <b>{confidence:.2f}%</b> for this evaluation.",
+            f"""
+            Final Score (Mean): <b>{mean:.2f}</b><br/>
+            Confidence Interval: <b>{lower:.2f} – {upper:.2f}</b><br/>
+            Model Confidence: <b>{confidence:.2f}%</b>
+            """,
             styles["Normal"]
         ))
         story.append(Spacer(1, 16))
 
-    # ---------------- AI NARRATIVE ----------------
+    # ---------------- GENAI NARRATIVE ----------------
     if ai_narrative:
         story.append(Paragraph("<b>AI-Generated Evaluation Narrative</b>", styles["Heading2"]))
         story.append(Spacer(1, 8))
@@ -95,10 +103,11 @@ def generate_report(
     # ---------------- FOOTER ----------------
     story.append(Spacer(1, 30))
     story.append(Paragraph(
-        "<i>This report was automatically generated using Machine Learning, Explainable AI, "
-        "and Generative AI models. Human review is recommended before final funding decisions.</i>",
+        "<i>This report was automatically generated using Machine Learning, "
+        "Explainable AI, and Generative AI models. Human review is recommended.</i>",
         styles["Italic"]
     ))
 
     doc.build(story)
-    return file_path
+
+    return final_filename, file_path

@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Float
+from sqlalchemy import Column, Integer, String, Float, DateTime
+from datetime import datetime
 from backend.database import Base
 
 class ProposalEvaluation(Base):
@@ -11,3 +12,4 @@ class ProposalEvaluation(Base):
     final_score = Column(Float)
     decision = Column(String)
     report_path = Column(String)
+    created_at = Column(DateTime, default=datetime.utcnow)
