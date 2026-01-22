@@ -1,9 +1,14 @@
-import joblib
-from backend.services.feature_extractor import extract_features
+import random
 
-model = joblib.load("ml/evaluator_model.pkl")
+def ml_evaluate_with_uncertainty(novelty, budget):
+    """
+    Simulate multiple ML predictions (like ensemble models)
+    """
+    predictions = []
 
-def ml_evaluate(text, novelty, budget):
-    features = extract_features(text, novelty, budget)
-    score = model.predict(features)[0]
-    return float(score)
+    for _ in range(20):  # ensemble simulation
+        noise = random.uniform(-3, 3)
+        score = (0.6 * novelty) + (0.4 * 100) + noise
+        predictions.append(score)
+
+    return predictions

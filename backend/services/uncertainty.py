@@ -1,14 +1,24 @@
 import numpy as np
-from backend.services.ml_evaluator import ml_evaluate
 
-def estimate_confidence(text, novelty, budget, runs=20):
-    scores = [
-        ml_evaluate(text, novelty, budget) + np.random.normal(0, 1)
-        for _ in range(runs)
-    ]
+def estimate_confidence_band(predictions: list[float]):
+    """
+    Takes multiple model predictions and returns:
+    mean, std, confidence interval
+    """
+    preds = np.array(predictions)
 
-    mean = np.mean(scores)
-    std = np.std(scores)
+    mean_score = preds.mean()
+    std_dev = preds.std()
 
-    confidence = max(0, 100 - std * 5)
-    return float(round(confidence, 2))
+    lower = max(0, mean_score - 1.96 * std_dev)
+    upper = min(100, mean_score + 1.96 * std_dev)
+
+    confidence = max(0, 100 - std_dev * 10)
+
+    return {
+        "mean": round(mean_score, 2),
+        "std": round(std_dev, 2),
+        "lower": round(lower, 2),
+        "upper": round(upper, 2),
+        "confidence": round(confidence, 2)
+    }
