@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets:demo.gif" width="800"/>
+  <img src="assets:demo.mov" width="800"/>
 </p>
 🤖 AI Proposal Evaluation System
 --------------------------------------------------------------------------------------------------------------
