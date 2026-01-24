@@ -1,16 +1,23 @@
+from backend.services.rule_engine import validate_budget
+
+
 def check_finance(budget):
     """
-    Converts raw budget into a normalized financial score.
-    Assumes optimal funding range is ₹5L – ₹25L
+    Budget is currently numeric input.
+    Convert it into structured breakdown.
     """
-    if budget <= 0:
-        return 0
 
-    if budget < 5_00_000:
-        return 60  # underfunded risk
-    elif budget <= 25_00_000:
-        return 100  # optimal
-    elif budget <= 50_00_000:
-        return 75  # expensive but acceptable
-    else:
-        return 50  # high risk / low ROI
+    budget_data = {
+        "total": budget,
+        "equipment": budget * 0.25,
+        "travel": budget * 0.05,
+        "overhead": budget * 0.08,
+        "duration": 2
+    }
+
+    score, violations = validate_budget(budget_data)
+
+    return {
+        "finance_score": score,
+        "violations": violations
+    }
