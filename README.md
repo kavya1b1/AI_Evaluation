@@ -1,5 +1,9 @@
+![Python](https://img.shields.io/badge/python-3.9%2B-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-Backend-green)
+![Streamlit](https://img.shields.io/badge/Streamlit-UI-orange)
+![GitHub license](https://img.shields.io/github/license/kavya1b1/AI_Evaluation)
 
-🤖 AI Proposal Evaluation System
+# 🚀 AI-Driven Proposal Evaluation & Explainability Suite
 --------------------------------------------------------------------------------------------------------------
 
 An end-to-end AI-powered decision support system for automated R&D proposal evaluation
@@ -58,6 +62,30 @@ FastAPI Backend (proposal_routes.py)
    ├── GenAI Narrative Generation
    └── PDF Report Generation
 ```
+---
+
+## 🎥 Demo Preview
+
+### 🧠 AI Evaluation Dashboard
+![Dashboard](asset/dashboard.png)
+
+---
+
+### 📈 Confidence & Uncertainty Visualization
+![Confidence](asset/confidence.png)
+
+---
+
+### 📊 Explainable AI – Feature Importance
+![XAI](asset/xai.png)
+
+---
+
+### 📄 Generated PDF Evaluation Report
+![Report](asset/report.pdf.png)
+
+---
+
 ⚙️ Technology Stack
 --------------------------------------------------------------------------------------------------------------
 🔹 Backend
