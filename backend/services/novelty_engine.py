@@ -1,8 +1,10 @@
-from ml.embedding_model import get_embedding
-from ml.vector_store import search_vector
+from backend.services.similarity_engine import compute_similarity
 
-def novelty_score(proposal_text):
-    emb = get_embedding(proposal_text)
-    distance = search_vector(emb)
-    return float(max(0, 100 - float(distance)))
 
+def novelty_analysis(proposal_text):
+    novelty_score, top_matches = compute_similarity(proposal_text)
+
+    return {
+        "novelty_score": novelty_score,
+        "similar_projects": top_matches
+    }

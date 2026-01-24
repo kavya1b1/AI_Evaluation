@@ -103,13 +103,14 @@ if st.button("🚀 Run AI Evaluation", disabled=(file is None)):
         steps = [
             "Parsing proposal structure",
             "Embedding semantic content",
+            "Benchmarking against past projects",
             "Running ML ensemble models",
-            "Estimating uncertainty & confidence",
-            "Generating LLM evaluation narrative",
+            "Checking S&T guideline compliance",
+            "Generating AI narrative report",
         ]
         for step in steps:
             st.write(f"• {step}")
-            time.sleep(0.6)
+            time.sleep(0.5)
 
     response = requests.post(
         "http://localhost:8000/submit/",
@@ -126,8 +127,10 @@ if st.button("🚀 Run AI Evaluation", disabled=(file is None)):
 if st.session_state.result:
     data = st.session_state.result
 
+    # ---------------- SUMMARY ----------------
     st.markdown("<hr>", unsafe_allow_html=True)
     st.markdown("<div class='glass fade-in'>", unsafe_allow_html=True)
+
     st.subheader("📊 AI Evaluation Summary")
 
     c1, c2, c3 = st.columns(3)
@@ -136,66 +139,47 @@ if st.session_state.result:
     c3.metric("Finance", f"{data['finance']:.1f}")
 
     st.success(f"📝 Decision: **{data['decision']}**")
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    # ---------------- CONFIDENCE & UNCERTAINTY ----------------
-    cb = data["confidence_band"]
-
-    st.markdown("<hr>", unsafe_allow_html=True)
-    st.markdown("<div class='glass fade-in'>", unsafe_allow_html=True)
-    st.subheader("📈 ML Confidence & Uncertainty")
-
-    fig = go.Figure()
-
-    # Confidence band
-    fig.add_trace(go.Bar(
-        x=[cb["upper"] - cb["lower"]],
-        y=["Confidence Interval"],
-        base=[cb["lower"]],
-        orientation="h",
-        marker=dict(color="rgba(99,102,241,0.35)"),
-        hoverinfo="skip"
-    ))
-
-    # Mean marker
-    fig.add_trace(go.Scatter(
-        x=[cb["mean"]],
-        y=["Confidence Interval"],
-        mode="markers",
-        marker=dict(size=16, color="#38BDF8"),
-        name="Predicted Score"
-    ))
-
-    fig.update_layout(
-        xaxis=dict(range=[0, 100], title="Score"),
-        yaxis=dict(visible=False),
-        height=220,
-        showlegend=False,
-        plot_bgcolor="rgba(0,0,0,0)",
-        paper_bgcolor="rgba(0,0,0,0)"
-    )
-
-    st.plotly_chart(fig, use_container_width=True)
-
-    st.metric(
-        "Model Confidence",
-        f"{cb['confidence']:.1f}%",
-        help="Higher confidence means lower prediction uncertainty"
-    )
-
-    st.caption(
-        "Shaded region shows the 95% confidence interval. Narrower intervals indicate higher model certainty."
-    )
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # ---------------- XAI ----------------
+    # ---------------- SIMILAR PROJECTS ----------------
+    if "similar_projects" in data:
+        st.markdown("<hr>", unsafe_allow_html=True)
+        st.markdown("<div class='glass fade-in'>", unsafe_allow_html=True)
+
+        st.subheader("🔍 Novelty Benchmarking (Past Project Similarity)")
+
+        st.caption("Top 5 most similar NaCCER-funded past projects:")
+
+        for proj in data["similar_projects"]:
+            st.write(
+                f"📌 **{proj['title']}** "
+                f"(Similarity: `{proj['similarity']}`)"
+            )
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    # ---------------- FINANCE VIOLATIONS ----------------
+    if "violations" in data and len(data["violations"]) > 0:
+        st.markdown("<hr>", unsafe_allow_html=True)
+        st.markdown("<div class='glass fade-in'>", unsafe_allow_html=True)
+
+        st.subheader("⚠️ Financial Guideline Violations")
+
+        for v in data["violations"]:
+            st.error(f"❌ {v}")
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    # ---------------- FEATURE IMPORTANCE ----------------
     if "feature_importance" in data:
         st.markdown("<hr>", unsafe_allow_html=True)
         st.markdown("<div class='glass fade-in'>", unsafe_allow_html=True)
+
         st.subheader("📊 Explainable AI – Feature Importance")
 
         fi = data["feature_importance"]
+
         fig = px.bar(
             x=list(fi.values()),
             y=list(fi.keys()),
@@ -203,6 +187,7 @@ if st.session_state.result:
             color=list(fi.values()),
             color_continuous_scale="blues"
         )
+
         fig.update_layout(
             height=360,
             showlegend=False,
@@ -211,77 +196,23 @@ if st.session_state.result:
         )
 
         st.plotly_chart(fig, use_container_width=True)
-        st.caption("Relative contribution of each feature to the ML decision.")
 
         st.markdown("</div>", unsafe_allow_html=True)
-
-# ---------------- SHAP WATERFALL ----------------
-    if "shap_values" in data:
-        shap = data["shap_values"]
-        baseline = shap["baseline"]
-        contributions = shap["contributions"]
-
-        features = list(contributions.keys())
-        values = list(contributions.values())
-
-        cumulative = [baseline]
-        for v in values:
-            cumulative.append(cumulative[-1] + v)
-
-        fig = go.Figure()
-
-        # Contribution bars
-        for i, feature in enumerate(features):
-            fig.add_trace(go.Bar(
-                x=[values[i]],
-                y=[feature],
-                orientation="h",
-                base=cumulative[i],
-                marker=dict(
-                    color="#22C55E" if values[i] > 0 else "#EF4444"
-                ),
-                hovertemplate=f"{feature}: {values[i]:+.2f}<extra></extra>",
-                showlegend=False
-            ))
-
-        # Final score marker
-        fig.add_trace(go.Scatter(
-            x=[data["final_score"]],
-            y=["Final Score"],
-            mode="markers",
-            marker=dict(size=18, color="#38BDF8"),
-            hovertemplate="Final Score: %{x:.2f}<extra></extra>",
-            showlegend=False
-        ))
-
-        fig.update_layout(
-            title="🧠 SHAP Waterfall – Feature Impact on Final Score",
-            xaxis=dict(title="Score Contribution"),
-            plot_bgcolor="rgba(0,0,0,0)",
-            paper_bgcolor="rgba(0,0,0,0)",
-            height=400
-        )
-
-        st.markdown("<hr>", unsafe_allow_html=True)
-        st.markdown("<div class='glass fade-in'>", unsafe_allow_html=True)
-        st.plotly_chart(fig, use_container_width=True)
-        st.caption(
-            "SHAP-style explanation showing how each feature pushes the score higher or lower from the baseline."
-        )
-        st.markdown("</div>", unsafe_allow_html=True)
-
 
     # ---------------- AI NARRATIVE ----------------
     st.markdown("<hr>", unsafe_allow_html=True)
     st.markdown("<div class='glass fade-in'>", unsafe_allow_html=True)
+
     st.subheader("🤖 AI Evaluation Narrative")
     st.write(data["ai_report_text"])
+
     st.markdown("</div>", unsafe_allow_html=True)
 
     # ---------------- DOWNLOAD ----------------
     st.markdown("<hr>", unsafe_allow_html=True)
     st.markdown("<div class='glass fade-in'>", unsafe_allow_html=True)
-    st.subheader("📄 Evaluation Report")
+
+    st.subheader("📄 Download Final Evaluation Report")
 
     st.markdown(
         f"""
@@ -300,13 +231,18 @@ if st.session_state.result:
 # ---------------- HISTORY ----------------
 st.markdown("<hr>", unsafe_allow_html=True)
 st.markdown("<div class='glass fade-in'>", unsafe_allow_html=True)
+
 st.subheader("🕒 Evaluation History Timeline")
 
 try:
     history = requests.get("http://localhost:8000/history/").json()
 
     for item in history:
-        color = "#22C55E" if item["final_score"] >= 85 else "#EAB308" if item["final_score"] >= 70 else "#EF4444"
+        color = (
+            "#22C55E" if item["final_score"] >= 85
+            else "#EAB308" if item["final_score"] >= 70
+            else "#EF4444"
+        )
 
         st.markdown(
             f"""

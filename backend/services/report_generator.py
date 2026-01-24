@@ -1,5 +1,11 @@
 from reportlab.lib.pagesizes import A4
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Paragraph,
+    Spacer,
+    Table,
+    TableStyle
+)
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 from datetime import datetime
@@ -13,12 +19,15 @@ def generate_report(
     decision,
     explanation,
     ai_narrative=None,
-    confidence_data=None   # ✅ FIX: accept confidence_data
+    confidence_data=None,
+    similar_projects=None,      # ✅ NEW
+    violations=None             # ✅ NEW
 ):
     os.makedirs("reports", exist_ok=True)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     uid = uuid.uuid4().hex[:6]
+
     final_filename = f"{timestamp}_{uid}_{filename}"
     file_path = os.path.join("reports", final_filename)
 
@@ -52,10 +61,10 @@ def generate_report(
 
     table = Table(table_data, colWidths=[220, 120])
     table.setStyle(TableStyle([
-        ("BACKGROUND", (0,0), (-1,0), colors.lightgrey),
-        ("GRID", (0,0), (-1,-1), 1, colors.grey),
-        ("FONT", (0,0), (-1,0), "Helvetica-Bold"),
-        ("ALIGN", (1,1), (-1,-1), "CENTER")
+        ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+        ("GRID", (0, 0), (-1, -1), 1, colors.grey),
+        ("FONT", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("ALIGN", (1, 1), (-1, -1), "CENTER")
     ]))
 
     story.append(table)
@@ -67,14 +76,43 @@ def generate_report(
     story.append(Paragraph(decision, styles["Normal"]))
     story.append(Spacer(1, 16))
 
+    # ---------------- SIMILAR PROJECTS ----------------
+    if similar_projects:
+        story.append(Paragraph("<b>Novelty Benchmarking (Similar Past Projects)</b>", styles["Heading2"]))
+        story.append(Spacer(1, 6))
+
+        for proj in similar_projects:
+            story.append(
+                Paragraph(
+                    f"• {proj['title']} (Similarity: {proj['similarity']})",
+                    styles["Normal"]
+                )
+            )
+
+        story.append(Spacer(1, 16))
+
+    # ---------------- FINANCE VIOLATIONS ----------------
+    if violations and len(violations) > 0:
+        story.append(Paragraph("<b>Financial Guideline Violations</b>", styles["Heading2"]))
+        story.append(Spacer(1, 6))
+
+        for v in violations:
+            story.append(
+                Paragraph(f"❌ {v}", styles["Normal"])
+            )
+
+        story.append(Spacer(1, 16))
+
     # ---------------- XAI ----------------
     story.append(Paragraph("<b>Explainable AI Insights</b>", styles["Heading2"]))
     story.append(Spacer(1, 6))
+
     for point in explanation:
         story.append(Paragraph(f"• {point}", styles["Normal"]))
+
     story.append(Spacer(1, 16))
 
-    # ---------------- CONFIDENCE & UNCERTAINTY ----------------
+    # ---------------- CONFIDENCE ----------------
     if confidence_data:
         mean = confidence_data["mean"]
         lower = confidence_data["lower"]
@@ -83,6 +121,7 @@ def generate_report(
 
         story.append(Paragraph("<b>Model Confidence & Risk</b>", styles["Heading2"]))
         story.append(Spacer(1, 6))
+
         story.append(Paragraph(
             f"""
             Final Score (Mean): <b>{mean:.2f}</b><br/>
@@ -91,12 +130,14 @@ def generate_report(
             """,
             styles["Normal"]
         ))
+
         story.append(Spacer(1, 16))
 
     # ---------------- GENAI NARRATIVE ----------------
     if ai_narrative:
         story.append(Paragraph("<b>AI-Generated Evaluation Narrative</b>", styles["Heading2"]))
         story.append(Spacer(1, 8))
+
         story.append(Paragraph(ai_narrative, styles["Normal"]))
         story.append(Spacer(1, 20))
 

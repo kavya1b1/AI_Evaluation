@@ -1,20 +1,13 @@
-import numpy as np
 from backend.services.financial_checker import check_finance
 
-def ml_evaluate_with_uncertainty(novelty, budget):
-    finance = check_finance(budget)
+finance_result = check_finance(budget)
 
-    # Weighted scoring (this is your core ML logic)
-    base_score = (
-        0.55 * novelty +
-        0.30 * finance +
-        0.15 * 80  # technical placeholder
-    )
+finance_score = finance_result["finance_score"]
+violations = finance_result["violations"]
 
-    # Monte Carlo uncertainty simulation
-    predictions = [
-        base_score + np.random.normal(0, 3)
-        for _ in range(30)
-    ]
+from backend.services.novelty_engine import novelty_analysis
 
-    return predictions
+novelty_result = novelty_analysis(text)
+
+novelty_score = novelty_result["novelty_score"]
+similar_projects = novelty_result["similar_projects"]
