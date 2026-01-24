@@ -1,13 +1,21 @@
-from backend.services.financial_checker import check_finance
+import numpy as np
 
-finance_result = check_finance(budget)
 
-finance_score = finance_result["finance_score"]
-violations = finance_result["violations"]
+def ml_evaluate_with_uncertainty(novelty_score, budget):
+    """
+    Simulated ML Ensemble Evaluation with randomness
+    Returns multiple predictions for uncertainty estimation
+    """
 
-from backend.services.novelty_engine import novelty_analysis
+    predictions = []
 
-novelty_result = novelty_analysis(text)
+    for _ in range(10):  # 10 ensemble samples
+        score = (
+            0.6 * novelty_score +
+            0.4 * (100 - (budget / 1000000) * 10)
+        )
 
-novelty_score = novelty_result["novelty_score"]
-similar_projects = novelty_result["similar_projects"]
+        noise = np.random.normal(0, 3)
+        predictions.append(score + noise)
+
+    return predictions
