@@ -1,48 +1,45 @@
-import requests
 import os
+import requests
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
-
 def reviewer_chat_response(question, proposal_text, evaluation_summary):
-    """
-    Proposal Reviewer Agent:
-    Answers user questions based on proposal + evaluation results.
-    """
+
+    if not OPENROUTER_API_KEY:
+        return "❌ OpenRouter API key missing."
 
     prompt = f"""
-You are an expert R&D funding reviewer at NaCCER (Coal India Limited).
+You are an expert research proposal reviewer.
 
-You have evaluated a research proposal with the following summary:
-
-Evaluation Summary:
+Proposal Summary:
 {evaluation_summary}
 
-Proposal Content (shortened):
-{proposal_text[:2000]}
-
-Now answer the user question like a professional reviewer.
+Proposal Content:
+{proposal_text}
 
 User Question:
 {question}
 
-Give clear actionable feedback in 5-7 lines.
+Answer clearly and professionally.
 """
+
+    headers = {
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    body = {
+        "model": "openai/gpt-3.5-turbo",
+        "messages": [{"role": "user", "content": prompt}]
+    }
 
     response = requests.post(
         "https://openrouter.ai/api/v1/chat/completions",
-        headers={
-            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-            "Content-Type": "application/json"
-        },
-        json={
-            "model": "mistralai/mixtral-8x7b",
-            "messages": [{"role": "user", "content": prompt}]
-        }
+        headers=headers,
+        json=body
     )
 
-    try:
-        return response.json()["choices"][0]["message"]["content"]
+    if response.status_code != 200:
+        return "⚠️ Reviewer could not generate response."
 
-    except:
-        return "⚠️ AI Reviewer could not generate response. Please try again."
+    return response.json()["choices"][0]["message"]["content"]

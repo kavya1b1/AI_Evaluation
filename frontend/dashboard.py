@@ -2,213 +2,347 @@ import streamlit as st
 import requests
 import time
 
-# ---------------- CONFIG ----------------
-st.set_page_config(
-    page_title="AI Proposal Evaluation System",
-    layout="wide",
-)
-
 API_URL = "http://localhost:8000"
 
+# ---------------- PAGE CONFIG ----------------
+st.set_page_config(page_title="AI Proposal Evaluator", layout="wide")
 
-# ---------------- SIDEBAR NAVBAR ----------------
+# ---------------- PREMIUM UI CSS ----------------
+st.markdown("""
+<style>
+            
+
+.stApp {
+    background: linear-gradient(120deg,#0f172a,#020617,#000);
+    color: white;
+    font-family: "Segoe UI", sans-serif;
+}
+            
+h1, h2, h3 {
+    font-size: 28px !important;
+}
+
+.stMarkdown, .stTextInput label {
+    font-size: 18px !important;
+}
+
+.glass-card {
+    background: rgba(255,255,255,0.07);
+    padding: 35px;
+    border-radius: 22px;
+    border: 1px solid rgba(255,255,255,0.15);
+    box-shadow: 0px 8px 25px rgba(0,0,0,0.6);
+    margin-bottom: 20px;
+}
+
+.big-title {
+    font-size: 42px;
+    font-weight: 800;
+    background: linear-gradient(90deg,#38BDF8,#A78BFA);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.chat-user {
+    background: #2563eb;
+    padding: 12px;
+    border-radius: 15px;
+    margin: 10px 0;
+    width: fit-content;
+    max-width: 80%;
+}
+
+.chat-ai {
+    background: rgba(255,255,255,0.12);
+    padding: 12px;
+    border-radius: 15px;
+    margin: 10px 0;
+    width: fit-content;
+    max-width: 80%;
+}
+
+hr {
+    border: none;
+    height: 1px;
+    background: rgba(255,255,255,0.15);
+    margin: 25px 0;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# ---------------- SIDEBAR NAV ----------------
 st.sidebar.title("📌 AI Proposal Evaluator")
-st.sidebar.markdown("Navigate through the system:")
 
 page = st.sidebar.radio(
-    "Go To",
-    [
-        "🏠 Home (Evaluate Proposal)",
-        "🤖 Reviewer Agent (Q&A Chat)",
-        "📜 Evaluation History"
-    ]
+    "Navigate",
+    ["🏠 Home", "🤖 Reviewer Agent Chat", "📜 Evaluation History"]
 )
 
+# ======================================================
+# SESSION STATE FIX (No Refresh Issue)
+# ======================================================
+if "last_eval" not in st.session_state:
+    st.session_state.last_eval = None
+
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
 
 # ======================================================
-# 🏠 PAGE 1 — HOME (PROPOSAL EVALUATION)
+# PAGE 1 — HOME
 # ======================================================
-if page == "🏠 Home (Evaluate Proposal)":
+if page == "🏠 Home":
 
-    st.title("📄 AI Proposal Evaluation System")
-    st.caption(
-        "Evaluate research proposals using ML Ensembles, Explainable AI, "
-        "Novelty Benchmarking, and Generative AI Narratives."
-    )
+    st.markdown("<h1 class='big-title'>🚀 AI Proposal Evaluation Dashboard</h1>",
+                unsafe_allow_html=True)
 
-    st.markdown("---")
+    st.markdown("### Upload your R&D proposal PDF for funding evaluation")
 
-    # ---------------- INPUT SECTION ----------------
-    st.subheader("📌 Submit Proposal")
-
-    file = st.file_uploader("Upload Proposal PDF", type=["pdf"])
+    file = st.file_uploader("📄 Upload Proposal PDF", type=["pdf"])
 
     budget = st.number_input(
         "💰 Proposed Budget (₹)",
         min_value=100000.0,
-        max_value=5000000.0,
-        step=50000.0,
-        help="Budget must be between ₹1,00,000 and ₹50,00,000"
+        max_value=500000000.0,
+        step=50000.0
     )
 
-    # ---------------- EVALUATE BUTTON ----------------
     if st.button("🚀 Run AI Evaluation"):
 
         if file is None:
-            st.warning("⚠️ Please upload a proposal PDF first.")
-        else:
-            with st.spinner("🧠 Running AI Evaluation Pipeline..."):
-                time.sleep(1)
+            st.error("❌ Please upload a PDF file first.")
+            st.stop()
 
-                response = requests.post(
-                    f"{API_URL}/submit/",
-                    files={"file": file},
-                    data={"budget": budget}
-                )
+        with st.spinner("Running AI Cognitive Pipeline..."):
 
-            # ---------------- RESPONSE ----------------
-            if response.status_code == 200:
-                data = response.json()
+            response = requests.post(
+                f"{API_URL}/submit/",
+                files={"file": file},
+                data={"budget": budget}
+            )
 
-                st.success("✅ Proposal Evaluated Successfully!")
+        data = response.json()
 
-                st.markdown("---")
+        if "error" in data:
+            st.error(data["error"])
+            st.stop()
 
-                # ---------------- METRICS ----------------
-                c1, c2, c3 = st.columns(3)
+        # ✅ Store evaluation permanently
+        st.session_state.last_eval = data
 
-                c1.metric("Final Score", f"{data['final_score']:.1f}/100")
-                c2.metric("Novelty Score", f"{data['novelty']:.1f}")
-                c3.metric("Finance Score", f"{data['finance']:.1f}")
+        st.success("✅ Proposal Evaluated Successfully!")
 
-                st.info(f"📌 Decision: **{data['decision']}**")
+    # ======================================================
+    # DISPLAY RESULTS WITH TABS
+    # ======================================================
+    if st.session_state.last_eval:
 
-                # ---------------- SIMILAR PROJECTS ----------------
-                if "similar_projects" in data:
-                    st.subheader("🔍 Novelty Benchmarking")
+        data = st.session_state.last_eval
 
-                    for proj in data["similar_projects"]:
-                        st.write(
-                            f"📌 **{proj['project']}** "
-                            f"(Similarity: `{proj['similarity']}`)"
-                        )
+        tab1, tab2, tab3, tab4, tab5 = st.tabs(
+            ["📊 Overview", "🔍 Novelty", "⚠ Finance", "🤖 AI Narrative", "📄 Report"]
+        )
 
-                # ---------------- FINANCE VIOLATIONS ----------------
-                if "violations" in data and len(data["violations"]) > 0:
-                    st.subheader("⚠️ Financial Violations")
+        # ---------------- TAB 1 Overview ----------------
+        with tab1:
+            st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
 
-                    for v in data["violations"]:
-                        st.error(v)
+            st.subheader("⭐ Final Evaluation Result")
 
-                # ---------------- AI NARRATIVE ----------------
-                st.subheader("🤖 AI Evaluation Narrative")
-                st.write(data["ai_report_text"])
+            col1, col2, col3 = st.columns(3)
+            col1.metric("Final Score", f"{data['final_score']:.1f}/100")
+            col2.metric("Novelty", f"{data['novelty']:.1f}")
+            col3.metric("Finance Score", f"{data['finance']:.1f}")
 
-                # ---------------- DOWNLOAD REPORT ----------------
-                st.subheader("📄 Download Evaluation Report")
+            st.success(f"Decision: **{data['decision']}**")
 
-                st.markdown(
-                    f"""
-                    <a href="{data['report_url']}" target="_blank"
-                    style="display:inline-block;
-                    padding:14px 22px;
-                    background:#4F46E5;
-                    color:white;
-                    border-radius:10px;
-                    text-decoration:none;
-                    font-weight:600;">
-                    ⬇️ Download PDF Report
-                    </a>
-                    """,
-                    unsafe_allow_html=True
-                )
+            st.markdown("</div>", unsafe_allow_html=True)
 
-            else:
-                try:
-                    st.error("❌ Evaluation Failed")
-                    st.warning(response.json()["detail"])
-                except:
-                    st.error("Something went wrong. Backend not responding.")
+        # ---------------- TAB 2 Novelty ----------------
+        with tab2:
+            st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
 
+            st.subheader("🔍 Similar Past Research Projects")
 
-# ======================================================
-# 🤖 PAGE 2 — REVIEWER AGENT CHATBOT
-# ======================================================
-elif page == "🤖 Reviewer Agent (Q&A Chat)":
+            for proj in data["similar_projects"]:
 
-    st.title("🤖 Reviewer Agent Chat")
-    st.caption(
-        "Ask questions about the last evaluated proposal. "
-        "This agent uses GenAI reasoning over proposal + evaluation summary."
-    )
+                # ✅ Correct key from backend
+                title = proj.get("title", "Unknown Paper")
 
-    st.markdown("---")
-
-    question = st.text_input("💬 Ask your question:")
-
-    if st.button("Ask Reviewer"):
-
-        if question.strip() == "":
-            st.warning("⚠️ Please type a question first.")
-        else:
-            with st.spinner("Thinking... 🤖"):
-                response = requests.post(
-                    f"{API_URL}/ask/",
-                    data={"question": question}
-                )
-
-            if response.status_code == 200:
-                answer = response.json()["answer"]
-
-                st.success("✅ Reviewer Response:")
-                st.write(answer)
-
-            else:
-                st.error("❌ Reviewer Agent Failed")
-                st.warning(response.json()["detail"])
-
-
-# ======================================================
-# 📜 PAGE 3 — EVALUATION HISTORY
-# ======================================================
-elif page == "📜 Evaluation History":
-
-    st.title("📜 Evaluation History Timeline")
-    st.caption("Shows the last 10 evaluated proposals stored in database.")
-
-    st.markdown("---")
-
-    try:
-        history = requests.get(f"{API_URL}/history/").json()
-
-        if len(history) == 0:
-            st.info("No evaluations found yet.")
-        else:
-            for item in history:
-
-                color = (
-                    "green" if item["final_score"] >= 85
-                    else "orange" if item["final_score"] >= 70
-                    else "red"
-                )
+                similarity = proj.get("similarity", 0)
+                url = proj.get("url", "")
 
                 st.markdown(
                     f"""
                     <div style="
-                        padding:15px;
-                        margin-bottom:12px;
-                        border-radius:12px;
-                        border-left:6px solid {color};
-                        background:rgba(240,240,240,0.05);
+                        background:rgba(255,255,255,0.08);
+                        padding:22px;
+                        margin-bottom:18px;
+                        border-radius:18px;
+                        border-left:6px solid #38BDF8;
+                        font-size:19px;
                     ">
-                        <b>📄 {item['filename']}</b><br>
-                        🕒 {item['created_at']}<br>
-                        ⭐ Score: <b>{item['final_score']:.1f}</b><br>
-                        📌 Decision: <b>{item['decision']}</b>
+                        📌 <b style="font-size:22px;">{title}</b><br><br>
+
+                        Similarity Score:
+                        <span style="color:#22c55e;font-weight:800;">
+                            {similarity:.2f}
+                        </span>
+                        <br><br>
+
+                        {"🔗 <a href='" + url + "' target='_blank' style='color:#A78BFA;font-weight:700;font-size:17px;'>Read Full Paper →</a>" if url else ""}
                     </div>
                     """,
                     unsafe_allow_html=True
                 )
 
-    except:
-        st.error("❌ Could not load history. Backend might not be running.")
+            st.markdown("</div>", unsafe_allow_html=True)
+
+
+
+        # ---------------- TAB 3 Finance ----------------
+        with tab3:
+            st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
+
+            st.subheader("⚠ Financial Compliance Check")
+
+            if len(data["violations"]) > 0:
+                for v in data["violations"]:
+                    st.error(f"❌ {v}")
+            else:
+                st.success("✅ No financial violations detected!")
+
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        # ---------------- TAB 4 AI Narrative ----------------
+        with tab4:
+            st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
+
+            st.subheader("🤖 AI Evaluation Narrative Report")
+
+            st.markdown(
+                f"""
+                <div style="line-height:1.8;font-size:16px;">
+                    {data["ai_report_text"]}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        # ---------------- TAB 5 Report Download ----------------
+        with tab5:
+            st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
+
+            st.subheader("📄 Download AI Evaluation Report")
+
+            st.markdown(
+                f"""
+                <a href="{data['report_url']}" target="_blank"
+                style="display:inline-block;padding:16px 28px;
+                background:linear-gradient(90deg,#2563EB,#7C3AED);
+                color:white;border-radius:14px;font-weight:700;
+                text-decoration:none;">
+                ⬇️ Download PDF Report
+                </a>
+                """,
+                unsafe_allow_html=True
+            )
+
+            st.markdown("</div>", unsafe_allow_html=True)
+
+# ======================================================
+# PAGE 2 — REVIEWER AGENT CHAT
+# ======================================================
+elif page == "🤖 Reviewer Agent Chat":
+
+    st.markdown("<h1 class='big-title'>🤖 Reviewer Agent Chat</h1>",
+                unsafe_allow_html=True)
+
+    if st.session_state.last_eval is None:
+        st.warning("⚠ Please evaluate a proposal first on Home Page.")
+        st.stop()
+
+    st.info("Ask things like: Why low score? How to improve? What are risks?")
+
+    question = st.text_input("💬 Enter your question:")
+
+    if st.button("Ask Reviewer"):
+
+        if question.strip() == "":
+            st.warning("Please type a question.")
+            st.stop()
+
+        with st.spinner("🤖 Reviewer Agent is thinking..."):
+            payload = {
+                "question": question,
+                "proposal_text": st.session_state.last_eval.get("proposal_text", ""),
+                "final_score": st.session_state.last_eval["final_score"],
+                "decision": st.session_state.last_eval["decision"]
+            }
+
+            response = requests.post(f"{API_URL}/ask/", data=payload)
+
+        if response.status_code == 200:
+
+            answer = response.json()["answer"]
+
+            st.session_state.chat_history.append(("user", question))
+            st.session_state.chat_history.append(("ai", answer))
+
+        else:
+            st.error("❌ Reviewer Agent Failed.")
+
+    # Display Chat History
+    st.markdown("---")
+
+    for role, msg in st.session_state.chat_history:
+        if role == "user":
+            st.markdown(f"<div class='chat-user'>👤 {msg}</div>",
+                        unsafe_allow_html=True)
+        else:
+            st.markdown(f"<div class='chat-ai'>🤖 {msg}</div>",
+                        unsafe_allow_html=True)
+
+# ======================================================
+# PAGE 3 — HISTORY
+# ======================================================
+elif page == "📜 Evaluation History":
+
+    st.markdown("<h1 class='big-title'>📜 Evaluation History</h1>",
+                unsafe_allow_html=True)
+
+    history = requests.get(f"{API_URL}/history/").json()
+
+    for item in history:
+
+        score = float(item["final_score"])
+
+        # Color logic
+        if score >= 85:
+            border = "#22C55E"   # Green
+        elif score >= 70:
+            border = "#EAB308"   # Yellow
+        else:
+            border = "#EF4444"   # Red
+
+        st.markdown(
+            f"""
+            <div style="
+                background: rgba(255,255,255,0.07);
+                padding: 20px;
+                border-radius: 16px;
+                border-left: 6px solid {border};
+                margin-bottom: 15px;
+                box-shadow: 0px 8px 20px rgba(0,0,0,0.5);
+            ">
+                <b style="font-size:18px;">📌 {item['filename']}</b><br><br>
+
+                ⭐ Score: {score:.1f}<br>
+                📝 Decision: {item['decision']}<br>
+                📅 Date: {item['created_at']}
+
+            </div>
+            """,
+            unsafe_allow_html=True
+        )

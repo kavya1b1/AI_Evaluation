@@ -1,48 +1,86 @@
-from sentence_transformers import SentenceTransformer, util
-import numpy as np
-
-# Load transformer model once
-model = SentenceTransformer("all-MiniLM-L6-v2")
-
-# Example database of past funded projects
-PAST_PROJECTS = [
-    "AI-based crop disease detection using drone imagery",
-    "Smart traffic optimization system using deep learning",
-    "Healthcare chatbot for rural vaccination awareness",
-    "IoT + AI energy monitoring for smart buildings",
-    "Blockchain-based secure academic certificate verification"
-]
+import pandas as pd
+import os
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 
 def compute_similarity(proposal_text):
     """
-    Computes similarity between proposal and past projects.
-    Returns novelty score + top matching projects.
+    Computes similarity between uploaded proposal and past benchmark projects.
+    Returns:
+        novelty_score (float)
+        top_matches (list)
     """
 
-    # Encode proposal + past projects
-    proposal_embedding = model.encode(proposal_text, convert_to_tensor=True)
-    past_embeddings = model.encode(PAST_PROJECTS, convert_to_tensor=True)
+    # ---------------------------------------------------
+    # ✅ Correct Path Handling
+    # ---------------------------------------------------
 
-    # Compute cosine similarity
-    similarities = util.cos_sim(proposal_embedding, past_embeddings)[0]
+    # Current file: backend/services/similarity_engine.py
+    # BASE_DIR becomes: backend/
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-    # Convert to numpy
-    sim_scores = similarities.cpu().numpy()
+    # Dataset is stored in: data/past_projects.csv
+    csv_path = os.path.join(BASE_DIR, "..", "data", "past_projects.csv")
 
-    # Top 3 matches
-    top_idx = np.argsort(sim_scores)[::-1][:3]
+    # Normalize path
+    csv_path = os.path.abspath(csv_path)
 
-    top_matches = [
-        {
-            "project": PAST_PROJECTS[i],
-            "similarity": float(sim_scores[i])
-        }
-        for i in top_idx
-    ]
+    # ---------------------------------------------------
+    # ✅ Load CSV
+    # ---------------------------------------------------
+    if not os.path.exists(csv_path):
+        raise FileNotFoundError(f"past_projects.csv not found at: {csv_path}")
 
-    # Novelty Score = inverse similarity
-    max_similarity = float(sim_scores[top_idx[0]])
-    novelty_score = round((1 - max_similarity) * 100, 2)
+    df = pd.read_csv(csv_path)
 
-    return novelty_score, top_matches
+    # ---------------------------------------------------
+    # ✅ Ensure Required Columns
+    # ---------------------------------------------------
+    if "project" not in df.columns:
+        raise ValueError("CSV must contain a 'project' column")
+
+    # Optional URL column
+    if "url" not in df.columns:
+        df["url"] = ""
+
+    # Fill missing values
+    df["project"] = df["project"].fillna("")
+    df["url"] = df["url"].fillna("")
+
+    past_titles = df["project"].tolist()
+
+    # ---------------------------------------------------
+    # ✅ TF-IDF Similarity
+    # ---------------------------------------------------
+    documents = past_titles + [proposal_text]
+
+    vectorizer = TfidfVectorizer(stop_words="english")
+    vectors = vectorizer.fit_transform(documents)
+
+    similarities = cosine_similarity(
+        vectors[-1],
+        vectors[:-1]
+    ).flatten()
+
+    # ---------------------------------------------------
+    # ✅ Top 5 Most Similar Papers
+    # ---------------------------------------------------
+    top_indices = similarities.argsort()[-5:][::-1]
+
+    results = []
+    for idx in top_indices:
+        results.append({
+            "project": df.iloc[idx]["project"],
+            "similarity": round(float(similarities[idx]), 3),
+            "url": df.iloc[idx]["url"]
+        })
+
+    # ---------------------------------------------------
+    # ✅ Novelty Score Calculation
+    # ---------------------------------------------------
+    max_sim = similarities.max() if len(similarities) > 0 else 0.0
+
+    novelty_score = round((1 - max_sim) * 100, 2)
+
+    return novelty_score, results
