@@ -7,6 +7,8 @@ import os
 from backend.services.shap_explainer import get_shap_values
 from backend.services.genai_narrative import generate_ai_narrative
 from backend.services.document_parser import extract_text_from_pdf
+from dotenv import load_dotenv
+load_dotenv()
 
 from backend.services.novelty_engine import novelty_analysis
 from backend.services.financial_checker import check_finance

@@ -1,22 +1,39 @@
-import faiss
-import numpy as np
 import pandas as pd
-from ml.embedding_model import get_embedding
+import os
 
-dimension = 384
-index = faiss.IndexFlatL2(dimension)
-stored_texts = []
+past_projects = []
 
-def load_past_projects(csv_path="data/past_projects.csv"):
+
+def load_past_projects():
+    """
+    Loads past project dataset safely.
+    Works even if abstract column does not exist.
+    """
+
+    global past_projects
+
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    csv_path = os.path.join(BASE_DIR, "data", "past_projects.csv")
+
+    if not os.path.exists(csv_path):
+        print("❌ past_projects.csv not found!")
+        return
+
     df = pd.read_csv(csv_path)
-    for _, row in df.iterrows():
-        text = row["abstract"]
-        emb = get_embedding(text)
-        index.add(np.array([emb]))
-        stored_texts.append(text)
 
-def search_vector(embedding):
-    if index.ntotal == 0:
-        return 100  # no past data → full novelty
-    D, I = index.search(np.array([embedding]), 1)
-    return D[0][0]
+    # ✅ Ensure required column exists
+    if "project" not in df.columns:
+        raise ValueError("CSV must contain a 'project' column")
+
+    # ✅ Add missing url column if not present
+    if "url" not in df.columns:
+        df["url"] = ""
+
+    # ✅ No abstract needed
+    past_projects = df.to_dict(orient="records")
+
+    print("✅ Past Projects Loaded Successfully:", len(past_projects))
+
+
+def get_projects():
+    return past_projects

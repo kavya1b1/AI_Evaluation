@@ -1,45 +1,38 @@
 import os
-import requests
+from openai import OpenAI
 
+# ✅ OpenRouter Setup
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+
+client = OpenAI(
+    api_key=OPENROUTER_API_KEY,
+    base_url="https://openrouter.ai/api/v1"
+)
+
+MODEL = "mistralai/mixtral-8x7b-instruct"
+
 
 def reviewer_chat_response(question, proposal_text, evaluation_summary):
 
-    if not OPENROUTER_API_KEY:
-        return "❌ OpenRouter API key missing."
-
     prompt = f"""
-You are an expert research proposal reviewer.
+You are a funding proposal reviewer agent.
 
-Proposal Summary:
+Proposal Text:
+{proposal_text[:1500]}
+
+Evaluation Summary:
 {evaluation_summary}
-
-Proposal Content:
-{proposal_text}
 
 User Question:
 {question}
 
-Answer clearly and professionally.
+Answer clearly in 5–6 lines like a reviewer.
 """
 
-    headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-        "Content-Type": "application/json"
-    }
-
-    body = {
-        "model": "openai/gpt-3.5-turbo",
-        "messages": [{"role": "user", "content": prompt}]
-    }
-
-    response = requests.post(
-        "https://openrouter.ai/api/v1/chat/completions",
-        headers=headers,
-        json=body
+    response = client.chat.completions.create(
+        model=MODEL,
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.5
     )
 
-    if response.status_code != 200:
-        return "⚠️ Reviewer could not generate response."
-
-    return response.json()["choices"][0]["message"]["content"]
+    return response.choices[0].message.content.strip()

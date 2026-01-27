@@ -10,65 +10,88 @@ st.set_page_config(page_title="AI Proposal Evaluator", layout="wide")
 # ---------------- PREMIUM UI CSS ----------------
 st.markdown("""
 <style>
-            
 
 .stApp {
     background: linear-gradient(120deg,#0f172a,#020617,#000);
     color: white;
     font-family: "Segoe UI", sans-serif;
 }
-            
+
+/* 🔥 Bigger Headings */
 h1, h2, h3 {
-    font-size: 28px !important;
+    font-size: 34px !important;
+    font-weight: 800 !important;
 }
 
-.stMarkdown, .stTextInput label {
+/* 🔥 Sidebar Bigger */
+section[data-testid="stSidebar"] * {
     font-size: 18px !important;
 }
 
+/* 🔥 Sidebar Title */
+section[data-testid="stSidebar"] h1 {
+    font-size: 24px !important;
+}
+
+/* 🔥 Input Labels Bigger */
+label {
+    font-size: 20px !important;
+    font-weight: 600 !important;
+}
+
+/* 🔥 Budget Input Bigger */
+div[data-testid="stNumberInput"] input {
+    font-size: 20px !important;
+    padding: 14px !important;
+}
+
+/* 🔥 File Upload Box Bigger */
+div[data-testid="stFileUploader"] {
+    font-size: 18px !important;
+}
+
+/* 🔥 Buttons Bigger */
+button {
+    font-size: 18px !important;
+    padding: 12px 20px !important;
+    border-radius: 14px !important;
+}
+
+/* 🔥 Tabs Bigger */
+.stTabs [data-baseweb="tab"] {
+    font-size: 20px !important;
+    padding: 14px 30px !important;
+    font-weight: 700 !important;
+}
+
+/* Glass Card Bigger */
 .glass-card {
+    font-size: 20px !important;
     background: rgba(255,255,255,0.07);
-    padding: 35px;
+    padding: 40px;
     border-radius: 22px;
     border: 1px solid rgba(255,255,255,0.15);
     box-shadow: 0px 8px 25px rgba(0,0,0,0.6);
-    margin-bottom: 20px;
+    margin-bottom: 25px;
 }
 
-.big-title {
-    font-size: 42px;
-    font-weight: 800;
-    background: linear-gradient(90deg,#38BDF8,#A78BFA);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+/* Chat Bubble Bigger */
+.chat-user, .chat-ai {
+    font-size: 18px !important;
+    padding: 14px;
 }
 
-.chat-user {
-    background: #2563eb;
-    padding: 12px;
-    border-radius: 15px;
-    margin: 10px 0;
-    width: fit-content;
-    max-width: 80%;
-}
-
-.chat-ai {
-    background: rgba(255,255,255,0.12);
-    padding: 12px;
-    border-radius: 15px;
-    margin: 10px 0;
-    width: fit-content;
-    max-width: 80%;
-}
-
+/* HR Divider */
 hr {
     border: none;
     height: 1px;
     background: rgba(255,255,255,0.15);
     margin: 25px 0;
 }
+
 </style>
 """, unsafe_allow_html=True)
+
 
 # ---------------- SIDEBAR NAV ----------------
 st.sidebar.title("📌 AI Proposal Evaluator")
@@ -86,6 +109,7 @@ if "last_eval" not in st.session_state:
 
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
+
 
 # ======================================================
 # PAGE 1 — HOME
@@ -120,7 +144,16 @@ if page == "🏠 Home":
                 data={"budget": budget}
             )
 
-        data = response.json()
+        if response.status_code != 200:
+            st.error("Backend failed. Check FastAPI logs.")
+            st.stop()
+
+        try:
+            data = response.json()
+        except:
+            st.error("Server returned invalid JSON.")
+            st.stop()
+
 
         if "error" in data:
             st.error(data["error"])
@@ -128,8 +161,8 @@ if page == "🏠 Home":
 
         # ✅ Store evaluation permanently
         st.session_state.last_eval = data
-
         st.success("✅ Proposal Evaluated Successfully!")
+
 
     # ======================================================
     # DISPLAY RESULTS WITH TABS
@@ -165,31 +198,36 @@ if page == "🏠 Home":
 
             for proj in data["similar_projects"]:
 
-                # ✅ Correct key from backend
-                title = proj.get("title", "Unknown Paper")
-
+                title = proj.get("project", "Unknown Paper")
                 similarity = proj.get("similarity", 0)
                 url = proj.get("url", "")
+
+                # ✅ Fix NaN links
+                if not url or str(url).strip().lower() == "nan":
+                    url = ""
 
                 st.markdown(
                     f"""
                     <div style="
-                        background:rgba(255,255,255,0.08);
-                        padding:22px;
-                        margin-bottom:18px;
+                        background:rgba(255,255,255,0.10);
+                        padding:24px;
+                        margin-bottom:20px;
                         border-radius:18px;
-                        border-left:6px solid #38BDF8;
-                        font-size:19px;
+                        border-left:7px solid #38BDF8;
+                        font-size:20px;
                     ">
+
                         📌 <b style="font-size:22px;">{title}</b><br><br>
 
-                        Similarity Score:
-                        <span style="color:#22c55e;font-weight:800;">
+                        ✅ Similarity Score: 
+                        <span style="color:#22c55e;font-weight:900;font-size:20px;">
                             {similarity:.2f}
                         </span>
+
                         <br><br>
 
-                        {"🔗 <a href='" + url + "' target='_blank' style='color:#A78BFA;font-weight:700;font-size:17px;'>Read Full Paper →</a>" if url else ""}
+                        {"🔗 <a href='" + url + "' target='_blank' style='color:#A78BFA;font-weight:800;font-size:18px;'>Read Full Paper →</a>" if url else ""}
+
                     </div>
                     """,
                     unsafe_allow_html=True
@@ -198,11 +236,9 @@ if page == "🏠 Home":
             st.markdown("</div>", unsafe_allow_html=True)
 
 
-
         # ---------------- TAB 3 Finance ----------------
         with tab3:
             st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-
             st.subheader("⚠ Financial Compliance Check")
 
             if len(data["violations"]) > 0:
@@ -221,7 +257,12 @@ if page == "🏠 Home":
 
             st.markdown(
                 f"""
-                <div style="line-height:1.8;font-size:16px;">
+                <div style="
+                    font-size:20px;
+                    line-height:2.0;
+                    color:white;
+                    padding-top:10px;
+                ">
                     {data["ai_report_text"]}
                 </div>
                 """,
@@ -230,19 +271,19 @@ if page == "🏠 Home":
 
             st.markdown("</div>", unsafe_allow_html=True)
 
+
         # ---------------- TAB 5 Report Download ----------------
         with tab5:
             st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-
             st.subheader("📄 Download AI Evaluation Report")
 
             st.markdown(
                 f"""
                 <a href="{data['report_url']}" target="_blank"
-                style="display:inline-block;padding:16px 28px;
+                style="display:inline-block;padding:18px 30px;
                 background:linear-gradient(90deg,#2563EB,#7C3AED);
-                color:white;border-radius:14px;font-weight:700;
-                text-decoration:none;">
+                color:white;border-radius:16px;font-weight:800;
+                text-decoration:none;font-size:18px;">
                 ⬇️ Download PDF Report
                 </a>
                 """,
@@ -250,6 +291,7 @@ if page == "🏠 Home":
             )
 
             st.markdown("</div>", unsafe_allow_html=True)
+
 
 # ======================================================
 # PAGE 2 — REVIEWER AGENT CHAT
@@ -263,7 +305,7 @@ elif page == "🤖 Reviewer Agent Chat":
         st.warning("⚠ Please evaluate a proposal first on Home Page.")
         st.stop()
 
-    st.info("Ask things like: Why low score? How to improve? What are risks?")
+    st.info("Ask: Why low score? How to improve? What are risks?")
 
     question = st.text_input("💬 Enter your question:")
 
@@ -274,17 +316,15 @@ elif page == "🤖 Reviewer Agent Chat":
             st.stop()
 
         with st.spinner("🤖 Reviewer Agent is thinking..."):
+
             payload = {
                 "question": question,
                 "proposal_text": st.session_state.last_eval.get("proposal_text", ""),
-                "final_score": st.session_state.last_eval["final_score"],
-                "decision": st.session_state.last_eval["decision"]
             }
 
             response = requests.post(f"{API_URL}/ask/", data=payload)
 
         if response.status_code == 200:
-
             answer = response.json()["answer"]
 
             st.session_state.chat_history.append(("user", question))
@@ -303,6 +343,7 @@ elif page == "🤖 Reviewer Agent Chat":
         else:
             st.markdown(f"<div class='chat-ai'>🤖 {msg}</div>",
                         unsafe_allow_html=True)
+
 
 # ======================================================
 # PAGE 3 — HISTORY
@@ -330,18 +371,18 @@ elif page == "📜 Evaluation History":
             f"""
             <div style="
                 background: rgba(255,255,255,0.07);
-                padding: 20px;
-                border-radius: 16px;
-                border-left: 6px solid {border};
-                margin-bottom: 15px;
+                padding: 22px;
+                border-radius: 18px;
+                border-left: 7px solid {border};
+                margin-bottom: 18px;
                 box-shadow: 0px 8px 20px rgba(0,0,0,0.5);
+                font-size:18px;
             ">
-                <b style="font-size:18px;">📌 {item['filename']}</b><br><br>
+                <b style="font-size:20px;">📌 {item['filename']}</b><br><br>
 
                 ⭐ Score: {score:.1f}<br>
                 📝 Decision: {item['decision']}<br>
                 📅 Date: {item['created_at']}
-
             </div>
             """,
             unsafe_allow_html=True
